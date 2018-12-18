@@ -2,11 +2,12 @@
 package com.github.newk5.vcmp.javascript.wsmod.server;
 
 import com.eclipsesource.v8.V8Function;
+import org.webbitserver.WebServer;
 
 
 public class WSServerMetadata {
 
-    private WSServer server;
+    private WebServer server;
     
      //************EVENTS
     private V8Function onStart;
@@ -20,15 +21,15 @@ public class WSServerMetadata {
 
    
 
-    public WSServerMetadata(WSServer server) {
+    public WSServerMetadata(WebServer server) {
         this.server = server;
     }
 
-    public WSServer getServer() {
+    public WebServer getServer() {
         return server;
     }
 
-    public void setServer(WSServer server) {
+    public void setServer(WebServer server) {
         this.server = server;
     }
 

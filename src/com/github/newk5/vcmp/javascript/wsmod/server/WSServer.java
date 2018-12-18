@@ -1,4 +1,3 @@
-
 package com.github.newk5.vcmp.javascript.wsmod.server;
 
 import com.github.newk5.vcmp.javascript.plugin.internals.EventLoop;
@@ -27,6 +26,7 @@ public class WSServer extends WebSocketServer {
 
         if (s.getOnOpen() != null) {
             AsyncResult res = new CommonResult(s.getOnOpen(), new Object[]{conn, handshake});
+            res.setMaintainCallback(true);
             eventLoop.queue.add(res);
         }
 
@@ -38,6 +38,7 @@ public class WSServer extends WebSocketServer {
 
         if (s.getOnClose() != null) {
             AsyncResult res = new CommonResult(s.getOnClose(), new Object[]{conn, code, reason, remote});
+            res.setMaintainCallback(true);
             eventLoop.queue.add(res);
         }
 
@@ -48,6 +49,7 @@ public class WSServer extends WebSocketServer {
         WSServerMetadata s = servers.get(super.getAddress().getHostString() + super.getPort());
         if (s.getOnMessage() != null) {
             AsyncResult res = new CommonResult(s.getOnMessage(), new Object[]{conn, message});
+            res.setMaintainCallback(true);
             eventLoop.queue.add(res);
         }
 
@@ -64,14 +66,17 @@ public class WSServer extends WebSocketServer {
         WSServerMetadata s = servers.get(super.getAddress().getHostString() + super.getPort());
         if (s.getOnError() != null) {
             AsyncResult res = new CommonResult(s.getOnError(), new Object[]{conn, ex.getMessage()});
+            res.setMaintainCallback(true);
             eventLoop.queue.add(res);
         }
     }
+
     @Override
     public void onStart() {
         WSServerMetadata s = servers.get(super.getAddress().getHostString() + super.getPort());
         if (s.getOnStart() != null) {
             AsyncResult res = new CommonResult(s.getOnStart(), new Object[]{"Websocket server successfully started at: ws://" + super.getAddress().getHostString() + ":" + super.getPort()});
+            res.setMaintainCallback(true);
             eventLoop.queue.add(res);
         }
     }

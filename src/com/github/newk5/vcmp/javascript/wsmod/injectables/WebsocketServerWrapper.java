@@ -1,39 +1,36 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
+
 package com.github.newk5.vcmp.javascript.wsmod.injectables;
 
 import com.eclipsesource.v8.V8Function;
 import com.eclipsesource.v8.V8Object;
-import com.github.newk5.vcmp.javascript.wsmod.server.WSServer;
-import java.net.InetSocketAddress;
 import com.github.newk5.vcmp.javascript.plugin.internals.Runtime;
 import com.github.newk5.vcmp.javascript.plugin.output.Console;
 import com.github.newk5.vcmp.javascript.wsmod.WebsocketsModule;
 import com.github.newk5.vcmp.javascript.wsmod.client.WSClientMetadata;
 import com.github.newk5.vcmp.javascript.wsmod.client.WSocketClient;
 import static com.github.newk5.vcmp.javascript.wsmod.client.WSocketClient.clients;
-import static com.github.newk5.vcmp.javascript.wsmod.server.WSServer.servers;
+import com.github.newk5.vcmp.javascript.wsmod.server.SocketServer;
+import static com.github.newk5.vcmp.javascript.wsmod.server.SocketServer.servers;
 import com.github.newk5.vcmp.javascript.wsmod.server.WSServerMetadata;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.concurrent.ThreadPoolExecutor;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import org.webbitserver.WebServer;
+import org.webbitserver.WebServers;
 
-/**
- *
- * @author Carlos
- */
+
 public class WebsocketServerWrapper {
-
+    
     private ThreadPoolExecutor pool = WebsocketsModule.pool;
     private Console console = Runtime.console;
-
-    public WSServer startServer(String host, int port, V8Object options) {
-        WSServer wsServer = new WSServer(new InetSocketAddress(host, port));
-
-        WSServerMetadata sm = new WSServerMetadata(wsServer);
+    WebServer webServer;
+    
+    public void addEndpoint(String endpoint, V8Object options) throws URISyntaxException {
+        String uri = endpoint.startsWith("/") ? endpoint : "/" + endpoint;
+       
+        WSServerMetadata sm = new WSServerMetadata(webServer);
         V8Object events = options.getObject("events");
         
         if (!events.isUndefined()) {
@@ -43,18 +40,67 @@ public class WebsocketServerWrapper {
             sm.setOnError(events.getObject("onError").isUndefined() ? null : (V8Function) events.get("onError"));
             sm.setOnStart(events.getObject("onStart").isUndefined() ? null : (V8Function) events.get("onStart"));
         }
+        servers.put(uri, sm);
+        webServer.add(uri, new SocketServer());
+        
+        WSocketClient client = new WSocketClient(new URI("ws://localhost:" + webServer.getPort() + uri + "?event=start"));
+        
         pool.submit(() -> {
-
-            servers.put(host + port, sm);
-            sm.getServer().run();
+            
+            try {
+                
+                client.connectBlocking();
+                client.send(new byte[0]);
+            } catch (Exception ex) {
+                Logger.getLogger(WebsocketServerWrapper.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            
         });
-
-        return wsServer;
+        
     }
-
-    public WSocketClient startClient(String url, V8Object options) throws URISyntaxException {
-        WSocketClient client = new WSocketClient(new URI(url)); 
+    
+    public void startServer(String endpoint, int port, V8Object options) throws URISyntaxException {
+        
+        String uri = endpoint.startsWith("/") ? endpoint : "/" + endpoint;
+        webServer = WebServers.createWebServer(port).add(uri, new SocketServer());
+        
+        WSServerMetadata sm = new WSServerMetadata(webServer);
         V8Object events = options.getObject("events");
+        
+        if (!events.isUndefined()) {
+            sm.setOnClose(events.getObject("onClose").isUndefined() ? null : (V8Function) events.get("onClose"));
+            sm.setOnOpen(events.getObject("onOpen").isUndefined() ? null : (V8Function) events.get("onOpen"));
+            sm.setOnMessage(events.getObject("onMessage").isUndefined() ? null : (V8Function) events.get("onMessage"));
+            sm.setOnError(events.getObject("onError").isUndefined() ? null : (V8Function) events.get("onError"));
+            sm.setOnStart(events.getObject("onStart").isUndefined() ? null : (V8Function) events.get("onStart"));
+        }
+        
+        servers.put(uri, sm);
+        
+        WSocketClient client = new WSocketClient(new URI("ws://localhost:" + port + uri + "?event=start"));
+        
+        pool.submit(() -> {
+            
+            try {
+                webServer.start().get();
+                client.connectBlocking();
+                client.send(new byte[0]);
+            } catch (Exception ex) {
+                Logger.getLogger(WebsocketServerWrapper.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            
+        });
+        
+    }
+    
+    public WSocketClient startClient(String url, V8Object options) throws URISyntaxException {
+        WSocketClient client = new WSocketClient(new URI(url));
+        V8Object events = options.getObject("events");
+        
+        if (options.contains("timeout")) {
+            client.setConnectionLostTimeout(options.getInteger("timeout"));
+        }
+        
         WSClientMetadata cm = new WSClientMetadata(client);
         if (!events.isUndefined()) {
             cm.setOnClose(events.getObject("onClose").isUndefined() ? null : (V8Function) events.get("onClose"));
@@ -62,14 +108,14 @@ public class WebsocketServerWrapper {
             cm.setOnMessage(events.getObject("onMessage").isUndefined() ? null : (V8Function) events.get("onMessage"));
             cm.setOnError(events.getObject("onError").isUndefined() ? null : (V8Function) events.get("onError"));
         }
-
+        
         pool.submit(() -> {
-
+            
             clients.put(url, cm);
             cm.getClient().connect();
         });
-
+        
         return client;
     }
-
+    
 }

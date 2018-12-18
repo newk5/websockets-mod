@@ -1,4 +1,3 @@
-
 package com.github.newk5.vcmp.javascript.wsmod.client;
 
 import com.github.newk5.vcmp.javascript.plugin.internals.EventLoop;
@@ -28,26 +27,36 @@ public class WSocketClient extends WebSocketClient {
     @Override
     public void onOpen(ServerHandshake handshakedata) {
         WSClientMetadata s = clients.get(super.uri.toString());
-        if (s.getOnOpen() != null) {
-            AsyncResult res = new CommonResult(s.getOnOpen(), new Object[]{ "Successfully opened connection to: "+super.uri.toString(), handshakedata});
-            eventLoop.queue.add(res);
+        if (s != null) {
+
+            if (s.getOnOpen() != null) {
+                AsyncResult res = new CommonResult(s.getOnOpen(), new Object[]{"Successfully opened connection to: " + super.uri.toString(), handshakedata});
+                res.setMaintainCallback(true);
+                eventLoop.queue.add(res);
+            }
         }
     }
 
     @Override
     public void onClose(int code, String reason, boolean remote) {
         WSClientMetadata s = clients.get(super.uri.toString());
-        if (s.getOnClose() != null) {
-            AsyncResult res = new CommonResult(s.getOnClose(), new Object[]{code, reason, remote});
-            eventLoop.queue.add(res);
+        if (s != null) {
+
+            if (s.getOnClose() != null) {
+                AsyncResult res = new CommonResult(s.getOnClose(), new Object[]{code, reason, remote});
+                res.setMaintainCallback(true);
+                eventLoop.queue.add(res);
+            }
         }
     }
 
     @Override
     public void onMessage(String message) {
         WSClientMetadata s = clients.get(super.uri.toString());
+
         if (s.getOnMessage() != null) {
             AsyncResult res = new CommonResult(s.getOnMessage(), new Object[]{message});
+            res.setMaintainCallback(true);
             eventLoop.queue.add(res);
         }
     }
@@ -60,9 +69,13 @@ public class WSocketClient extends WebSocketClient {
     @Override
     public void onError(Exception ex) {
         WSClientMetadata s = clients.get(super.uri.toString());
-        if (s.getOnError() != null) {
-            AsyncResult res = new CommonResult(s.getOnError(), new Object[]{ex.getMessage()});
-            eventLoop.queue.add(res);
+        if (s != null) {
+
+            if (s.getOnError() != null) {
+                AsyncResult res = new CommonResult(s.getOnError(), new Object[]{ex.getMessage()});
+                res.setMaintainCallback(true);
+                eventLoop.queue.add(res);
+            }
         }
     }
 
