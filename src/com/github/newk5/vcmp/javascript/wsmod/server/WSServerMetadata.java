@@ -8,6 +8,7 @@ import org.webbitserver.WebServer;
 public class WSServerMetadata {
 
     private WebServer server;
+    private String endpoint;
     
      //************EVENTS
     private V8Function onStart;
@@ -101,6 +102,20 @@ public class WSServerMetadata {
      */
     public void setOnError(V8Function onError) {
         this.onError = onError;
+    }
+
+    /**
+     * @return the endpoint
+     */
+    public String getEndpoint() {
+        return endpoint;
+    }
+
+    /**
+     * @param endpoint the endpoint to set
+     */
+    public void setEndpoint(String endpoint) {
+        this.endpoint = endpoint;
     }
 
  

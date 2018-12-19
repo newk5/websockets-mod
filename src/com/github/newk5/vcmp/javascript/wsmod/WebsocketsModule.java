@@ -1,4 +1,3 @@
-
 package com.github.newk5.vcmp.javascript.wsmod;
 
 import com.eclipsesource.v8.V8;
@@ -15,10 +14,10 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.stream.Collectors;
 import org.java_websocket.WebSocket;
 import org.java_websocket.handshake.ClientHandshake;
+import org.java_websocket.handshake.ServerHandshake;
 import org.pf4j.Extension;
 import org.pf4j.Plugin;
 import org.pf4j.PluginWrapper;
-
 
 public class WebsocketsModule extends Plugin {
 
@@ -37,8 +36,8 @@ public class WebsocketsModule extends Plugin {
         public void inject() {
             V8JavaAdapter.injectClass("_WebSocketConnection_", WebSocket.class, v8);
             V8JavaAdapter.injectClass("_WebSocketClientHandshake_", ClientHandshake.class, v8);
+            V8JavaAdapter.injectClass("_WebSocketServerHandshake_", ServerHandshake.class, v8);
 
-            V8JavaAdapter.injectClass("_WSServer_", WSServer.class, v8);
             V8JavaAdapter.injectClass("_WSocketClient_", WSocketClient.class, v8);
             V8JavaAdapter.injectObject("_WebsocketServerWrapper_", new WebsocketServerWrapper(), v8);
 
@@ -48,11 +47,10 @@ public class WebsocketsModule extends Plugin {
         public String javascript() {
             InputStream in = WebsocketsModule.class.getResourceAsStream("module.js");
             BufferedReader reader = new BufferedReader(new InputStreamReader(in));
-            String code =   reader.lines().collect(Collectors.joining("\n"));
-            
+            String code = reader.lines().collect(Collectors.joining("\n"));
+
             return code;
         }
-
 
     }
 }
